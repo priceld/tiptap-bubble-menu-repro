@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>tiptap BubbleMenu — stale preventHide strands the menu</title>
+    <style>
+      body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 24px; background: #eceff1; }
+      main { max-width: 720px; margin: 0 auto; }
+      .editor { background: #fff; border: 1px solid #b0bec5; border-radius: 4px; padding: 12px; }
+      .ProseMirror { outline: none; min-height: 4em; }
+      /* Presentation only, and nothing to do with the bug: the vanilla BubbleMenu
+         extension does not touch the element's initial styles, so the integrator must
+         take it out of flow and hide it. The React wrapper does this in JS. Without it
+         the menu sits visible in the page on load, and floating-ui measures it as a
+         static element the first time it positions it. */
+      #menu { position: absolute; visibility: hidden; opacity: 0;
+              display: flex; gap: 4px; padding: 4px; background: #263238; border-radius: 4px; }
+      #menu button { font: inherit; padding: 4px 10px; border: 0; border-radius: 3px; cursor: pointer; }
+      #outside { margin-top: 24px; padding: 32px; border: 1px dashed #90a4ae; border-radius: 4px;
+                 text-align: center; color: #546e7a; }
+      ol { padding-left: 20px; }
+      #log { margin-top: 16px; padding: 8px 12px; background: #fff; border: 1px solid #b0bec5;
+             border-radius: 4px; font-family: ui-monospace, monospace; white-space: pre-wrap;
+             min-height: 6em; }
+      code { background: #cfd8dc; padding: 1px 4px; border-radius: 3px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>BubbleMenu: a stale <code>preventHide</code> strands the menu on screen</h1>
+
+      <h2>Steps</h2>
+      <ol>
+        <li>Select some text in the editor. The bubble menu appears.</li>
+        <li>Click <b>Button A</b> in the menu. Focus moves into the menu and the menu stays open.
+            This is correct: <code>mousedown</code> set <code>preventHide</code>, and the blur it
+            caused consumed the flag.</li>
+        <li>Click <b>Button B</b> in the menu. The editor is <em>already</em> blurred, so this
+            <code>mousedown</code> sets <code>preventHide</code> again with no blur to consume it.
+            <b>The flag is now stale.</b></li>
+        <li>Press <kbd>Escape</kbd>. Focus returns to the editor with the selection intact, and the
+            menu stays open.</li>
+        <li>Click the dashed area below.</li>
+      </ol>
+      <p>
+        <b>Expected:</b> the menu hides, as it does without steps 2&ndash;4.<br />
+        <b>Actual:</b> the menu stays visible. The log records no <code>hide</code>.
+      </p>
+      <p>
+        <b>Control:</b> reload and do steps 1 and 5 only. The menu hides correctly, which isolates
+        the stale flag as the cause.
+      </p>
+
+      <h2>Editor</h2>
+      <div class="editor" id="editor"></div>
+
+      <div id="menu">
+        <button type="button" id="a">Button A</button>
+        <button type="button" id="b">Button B</button>
+      </div>
+
+      <div id="outside" tabindex="0">click here (outside the editor)</div>
+
+      <h2>Log</h2>
+      <div id="log"></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
