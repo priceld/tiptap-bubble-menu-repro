@@ -1,24 +1,18 @@
 # BubbleMenu: two ways the menu gets stranded on screen
 
-Two independent defects with the same symptom &mdash; the bubble menu cannot be dismissed by
-clicking outside the editor. Stock configuration: no custom `shouldShow`.
+Two independent defects with the same symptom, both in `BubbleMenuView`.
 
-Related to [ueberdosis/tiptap#6210](https://github.com/ueberdosis/tiptap/issues/6210). That
-issue names `preventHide` as the cause, which accounts for Bug 2 below but not Bug 1 — and
-Bug 1 is the one its description actually matches (*"if you click on a select but select
-nothing, the toolbar will stay open, requiring manual focusout event handlers on each
-button"*).
-
-Tested against `@tiptap/extension-bubble-menu@3.31.3`. `mousedownHandler`, `blurHandler` and
-`updateHandler` are unchanged on `main`.
+Stock configuration: no custom `shouldShow`. Tested against
+`@tiptap/extension-bubble-menu@3.31.3`; `mousedownHandler`, `blurHandler` and `updateHandler`
+are unchanged on `main`.
 
 ```sh
 npm install
 npm run dev
 ```
 
-Reload between the two sequences. The on-page log tells them apart: **Bug 1 logs one
-`editor blur`**, **Bug 2 logs two**.
+Each bug is a tab on the page. Reload between the two sequences; the log tells them apart:
+**Bug 1 logs one `editor blur`**, **Bug 2 logs two**.
 
 ## Bug 1 — nothing listens for focus leaving the menu
 
@@ -45,6 +39,12 @@ and bounces focus back to the content. Anything that leaves focus *in* the menu 
 select, a dropdown, a disabled control, a no-op. The buttons here are deliberately no-ops.
 
 ## Bug 2 — a stale `preventHide` swallows a real blur
+
+Related to [ueberdosis/tiptap#6210](https://github.com/ueberdosis/tiptap/issues/6210), which
+names `preventHide` as the cause. Note though that the issue's *description* reads like Bug 1
+above — *"if you click on a select but select nothing, the toolbar will stay open, requiring
+manual focusout event handlers on each button"* — so the reporter may have been hitting that
+one rather than this.
 
 Reload first.
 

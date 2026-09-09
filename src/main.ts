@@ -1,6 +1,7 @@
 import { Editor } from '@tiptap/core';
 import { BubbleMenu } from '@tiptap/extension-bubble-menu';
 import StarterKit from '@tiptap/starter-kit';
+import './tabs';
 
 const logEl = document.querySelector<HTMLDivElement>('#log')!;
 const log = (message: string) => {

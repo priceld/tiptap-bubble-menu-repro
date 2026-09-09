@@ -22,26 +22,25 @@
       #log { padding: 8px 12px; background: #fff; border: 1px solid #b0bec5; border-radius: 4px;
              font-family: ui-monospace, monospace; white-space: pre-wrap; min-height: 7em; }
       code { background: #cfd8dc; padding: 1px 4px; border-radius: 3px; }
-      section { background: #fff; border-left: 4px solid #546e7a; padding: 1px 16px 12px; margin: 20px 0; }
+      .subtle { color: #546e7a; }
+
+      [role='tablist'] { display: flex; gap: 4px; margin-top: 24px; }
+      [role='tab'] { font: inherit; padding: 8px 14px; cursor: pointer; background: #cfd8dc;
+                     border: 1px solid #b0bec5; border-bottom: 0;
+                     border-radius: 4px 4px 0 0; color: #37474f; }
+      [role='tab'][aria-selected='true'] { background: #fff; color: #000; font-weight: 600; }
+      [role='tabpanel'] { background: #fff; border: 1px solid #b0bec5; border-radius: 0 4px 4px 4px;
+                          padding: 1px 16px 12px; }
       .verdict { border-top: 1px solid #cfd8dc; padding-top: 8px; }
     </style>
   </head>
   <body>
     <main>
       <h1>BubbleMenu: two ways the menu gets stranded on screen</h1>
-      <p>
-        Two independent defects with the same symptom, both in
-        <code>BubbleMenuView</code>. Stock configuration &mdash; no custom
-        <code>shouldShow</code>. Related to
-        <a href="https://github.com/ueberdosis/tiptap/issues/6210">#6210</a>, whose reported
-        cause (<code>preventHide</code>) accounts for only the second of the two.
-      </p>
-      <p>
-        Reload between the two sequences. The log below tells them apart: <b>Bug 1 logs one
-        <code>editor blur</code></b> and <b>Bug 2 logs two</b>.
-      </p>
+      <p>Two independent defects with the same symptom, both in <code>BubbleMenuView</code>.</p>
 
       <h2>Editor</h2>
+      <p class="subtle">Stock configuration: no custom <code>shouldShow</code>.</p>
       <div class="editor" id="editor"></div>
 
       <div id="menu">
@@ -51,17 +50,31 @@
 
       <div id="outside" tabindex="0">click here (outside the editor)</div>
 
-      <section>
-        <h2>Bug 1 &mdash; nothing listens for focus leaving the menu</h2>
+      <div role="tablist" aria-label="Reproductions">
+        <button type="button" role="tab" id="tab-1" aria-controls="panel-1" aria-selected="true">
+          Bug 1 &mdash; no focusout listener
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="tab-2"
+          aria-controls="panel-2"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Bug 2 &mdash; stale <code>preventHide</code>
+        </button>
+      </div>
+
+      <section role="tabpanel" id="panel-1" aria-labelledby="tab-1">
+        <h2>Nothing listens for focus leaving the menu</h2>
         <ol>
           <li>Select some text in the editor. The bubble menu appears.</li>
           <li>Click <b>Button A</b>. Focus moves into the menu and the menu stays open, which
               is correct.</li>
           <li>Click the dashed area.</li>
         </ol>
-        <p class="verdict">
-          <b>Expected:</b> the menu hides. <b>Actual:</b> it stays.
-        </p>
+        <p class="verdict"><b>Expected:</b> the menu hides. <b>Actual:</b> it stays.</p>
         <p>
           The content element lost focus at step 2, so it cannot blur again.
           <code>blurHandler</code> is bound to <code>editor.on('blur')</code> and there is no
@@ -74,9 +87,13 @@
         </p>
       </section>
 
-      <section>
-        <h2>Bug 2 &mdash; a stale <code>preventHide</code> swallows a real blur</h2>
-        <p>Reload first.</p>
+      <section role="tabpanel" id="panel-2" aria-labelledby="tab-2" hidden>
+        <h2>A stale <code>preventHide</code> swallows a real blur</h2>
+        <p class="subtle">
+          Related to
+          <a href="https://github.com/ueberdosis/tiptap/issues/6210">ueberdosis/tiptap#6210</a>.
+          Reload before starting.
+        </p>
         <ol>
           <li>Select some text in the editor. The bubble menu appears.</li>
           <li>Click <b>Button A</b>. <code>mousedown</code> set <code>preventHide</code>, and the
@@ -88,19 +105,20 @@
               and the menu stays open.</li>
           <li>Click the dashed area.</li>
         </ol>
-        <p class="verdict">
-          <b>Expected:</b> the menu hides. <b>Actual:</b> it stays.
-        </p>
+        <p class="verdict"><b>Expected:</b> the menu hides. <b>Actual:</b> it stays.</p>
         <p>
           Unlike Bug 1 a real blur <em>does</em> arrive here &mdash; the log shows a second
-          <code>editor blur</code> &mdash; and the stale flag makes
-          <code>blurHandler</code> return before reaching <code>hide()</code>. Fixing Bug 1
-          does not fix this: focus is on the content at step 5, not in the menu, so a menu
-          <code>focusout</code> listener never fires.
+          <code>editor blur</code> &mdash; and the stale flag makes <code>blurHandler</code>
+          return before reaching <code>hide()</code>. Fixing Bug 1 does not fix this: focus is
+          on the content at step 5, not in the menu, so a menu <code>focusout</code> listener
+          never fires.
         </p>
       </section>
 
       <h2>Log</h2>
+      <p class="subtle">
+        Bug 1 logs one <code>editor blur</code>; Bug 2 logs two. Reload between sequences.
+      </p>
       <div id="log"></div>
     </main>
     <script type="module" src="/src/main.ts"></script>
