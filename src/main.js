@@ -9,8 +9,7 @@ import "./style.css";
 
 const menu = document.createElement("div");
 menu.className = "menu";
-menu.innerHTML =
-  "<label>Link text <input /></label> <button>Apply</button>";
+menu.innerHTML = "<label>Link text <input /></label> <button>Apply</button>";
 const input = menu.querySelector("input");
 const apply = menu.querySelector("button");
 
@@ -26,9 +25,7 @@ const onShow = () => {
   if (open) return;
   open = true;
   const range = linkRange(editor.state);
-  input.value = range
-    ? editor.state.doc.textBetween(range.from, range.to)
-    : "";
+  input.value = range ? editor.state.doc.textBetween(range.from, range.to) : "";
   input.focus();
   input.select();
 };
@@ -80,8 +77,6 @@ input.addEventListener("keydown", (event) => {
   }
 });
 
-// The same pattern as Tiptap's table column resizing: a plugin that exists only while the
-// editor has focus. Any registerPlugin call during the focus event triggers the bug.
 const extraKey = new PluginKey("onlyWhileFocused");
 const registerOnFocus = document.getElementById("register-on-focus");
 editor.on("focus", () => {
@@ -89,12 +84,15 @@ editor.on("focus", () => {
     registerOnFocus.checked &&
     !editor.state.plugins.some((p) => p.spec.key === extraKey)
   ) {
+    // This triggers the bug. Registering a plugin makes ProseMirror destroy and
+    // recreate every plugin view, the bubble menu's included. The destroyed
+    // view's focus timer still fires and re-appends the menu, which drops focus
+    // from its input.
     editor.registerPlugin(new Plugin({ key: extraKey }));
   }
 });
 editor.on("blur", ({ event }) => {
-  if (!menu.contains(event.relatedTarget))
-    editor.unregisterPlugin(extraKey);
+  if (!menu.contains(event.relatedTarget)) editor.unregisterPlugin(extraKey);
 });
 
 document.getElementById("reset").addEventListener("click", () => {
