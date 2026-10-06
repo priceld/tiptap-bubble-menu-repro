@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>
+      Tiptap BubbleMenu: a destroyed view's focus timer steals focus
+    </title>
+  </head>
+  <body>
+    <h1>BubbleMenu: a destroyed view's focus timer steals focus</h1>
+    <p>
+      When the editor gains focus, <code>BubbleMenuView</code> schedules
+      <code>setTimeout(() =&gt; this.update(...))</code>, and
+      <code>destroy()</code> never cancels it. ProseMirror destroys every plugin
+      view whenever the plugin list changes. So if anything calls
+      <code>registerPlugin</code> while the editor takes focus, the dead view's
+      timer still fires.
+    </p>
+    <p>
+      The editor below has a bubble menu for editing a link's text. It opens
+      when the caret is in a link and moves focus into its input, ready to
+      type.
+    </p>
+
+    <h2>Steps</h2>
+    <ol>
+      <li>
+        Click <b>Reset</b>. This puts the caret inside the link without
+        focusing the editor, so focus stays on the button.
+      </li>
+      <li>Press <kbd>Tab</kbd> to move focus into the editor.</li>
+    </ol>
+    <p>
+      <b>Expected:</b> the menu opens with the link text selected in its input,
+      ready to type over.<br />
+      <b>Actual:</b> the menu opens, but focus ends up on
+      <code>&lt;body&gt;</code>. Typing goes nowhere.
+    </p>
+    <p>
+      <label>
+        <input type="checkbox" id="register-on-focus" checked />
+        <b>Trigger the bug:</b> register a plugin whenever the editor gains
+        focus, and remove it on blur, as Tiptap's table column resizing does.
+      </label>
+    </p>
+    <p>
+      With this checked, the steps above lose focus. Clear it and repeat them,
+      and the input keeps focus.
+    </p>
+
+    <button id="reset">Reset</button>
+    <div id="editor" class="editor"></div>
+    <div class="status" id="status"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
