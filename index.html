@@ -10,16 +10,15 @@
     <h1>Tiptap menus: a destroyed view still runs its deferred work</h1>
     <p>
       <code>BubbleMenuView</code> and <code>FloatingMenuView</code> defer some
-      of their work with <code>setTimeout</code>, and
-      <code>destroy()</code> never stops it. ProseMirror destroys every plugin
-      view whenever the plugin list changes, so a
-      <code>registerPlugin</code> call while that work is pending leaves a
-      destroyed view acting on the menu.
+      of their work with <code>setTimeout</code>, but
+      <code>destroy()</code> never stops it. This could cause code to be run for
+      a view which has already been destroyed.
     </p>
     <p>
-      Each menu below moves focus into its input as it opens. When a destroyed
-      view acts on the menu, it moves the menu element, and that drops the
-      input's focus.
+      Each menu in the examples below moves focus into an
+      <code>input</code> within said menu as it opens. When a destroyed view
+      acts on the menu, it moves the menu element, and that drops the input's
+      focus.
     </p>
 
     <div class="tabs" role="tablist">
@@ -43,8 +42,15 @@
 
     <section id="bubble-panel" role="tabpanel" aria-labelledby="bubble-tab">
       <p>
-        A bubble menu for editing a link's text. It opens when the selection is
-        in the link.
+        In this example, there is a bubble menu for editing a link's text. It
+        opens when the selection is in the link.
+      </p>
+      <p>
+        Since <code>BubbleMenu</code> uses <code>setTimeout</code> in
+        <a
+          href="https://github.com/search?q=repo%3Aueberdosis%2Ftiptap+setTimeout+path%3Apackages%2Fextension-bubble-menu%2F&type=code"
+          >various places</a
+        >, please pick an area to test:
       </p>
       <fieldset>
         <legend>Deferred work to test</legend>
@@ -61,7 +67,7 @@
         </label>
       </fieldset>
 
-      <h2>Steps</h2>
+      <h2>How to reproduce</h2>
       <ol data-mode="focus">
         <li>
           Click <b>Reset</b>. This puts the caret inside the link without
@@ -111,12 +117,13 @@
       hidden
     >
       <p>
-        A floating menu with a prompt for the empty line. It opens when the
-        caret is on that line. <code>FloatingMenuView</code> has no update
-        debounce, so only its focus timer applies.
+        In this example, there is a floating menu with a prompt for the empty
+        line. It opens when the caret is on that empty line.
+        <code>FloatingMenuView</code> has no update debounce, so only its focus
+        timer applies.
       </p>
 
-      <h2>Steps</h2>
+      <h2>How to reproduce</h2>
       <ol>
         <li>
           Click <b>Reset</b>. This puts the caret on the empty line without
