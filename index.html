@@ -4,55 +4,145 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="data:," />
-    <title>
-      Tiptap BubbleMenu: a destroyed view's focus timer steals focus
-    </title>
+    <title>Tiptap menus: a destroyed view still runs its deferred work</title>
   </head>
   <body>
-    <h1>BubbleMenu: a destroyed view's focus timer steals focus</h1>
+    <h1>Tiptap menus: a destroyed view still runs its deferred work</h1>
     <p>
-      When the editor gains focus, <code>BubbleMenuView</code> schedules
-      <code>setTimeout(() =&gt; this.update(...))</code>, and
-      <code>destroy()</code> never cancels it. ProseMirror destroys every plugin
-      view whenever the plugin list changes. So if anything calls
-      <code>registerPlugin</code> while the editor takes focus, the dead view's
-      timer still fires.
+      <code>BubbleMenuView</code> and <code>FloatingMenuView</code> defer some
+      of their work with <code>setTimeout</code>, and
+      <code>destroy()</code> never stops it. ProseMirror destroys every plugin
+      view whenever the plugin list changes, so a
+      <code>registerPlugin</code> call while that work is pending leaves a
+      destroyed view acting on the menu.
     </p>
     <p>
-      The editor below has a bubble menu for editing a link's text. It opens
-      when the caret is in a link and moves focus into its input, ready to
-      type.
-    </p>
-
-    <h2>Steps</h2>
-    <ol>
-      <li>
-        Click <b>Reset</b>. This puts the caret inside the link without
-        focusing the editor, so focus stays on the button.
-      </li>
-      <li>Press <kbd>Tab</kbd> to move focus into the editor.</li>
-    </ol>
-    <p>
-      <b>Expected:</b> the menu opens with the link text selected in its input,
-      ready to type over.<br />
-      <b>Actual:</b> the menu opens, but focus ends up on
-      <code>&lt;body&gt;</code>. Typing goes nowhere.
-    </p>
-    <p>
-      <label>
-        <input type="checkbox" id="register-on-focus" checked />
-        <b>Trigger the bug:</b> register a plugin whenever the editor gains
-        focus, and remove it on blur, as Tiptap's table column resizing does.
-      </label>
-    </p>
-    <p>
-      With this checked, the steps above lose focus. Clear it and repeat them,
-      and the input keeps focus.
+      Each menu below moves focus into its input as it opens. When a destroyed
+      view acts on the menu, it moves the menu element, and that drops the
+      input's focus.
     </p>
 
-    <button id="reset">Reset</button>
-    <div id="editor" class="editor"></div>
-    <div class="status" id="status"></div>
+    <div class="tabs" role="tablist">
+      <button
+        role="tab"
+        id="bubble-tab"
+        aria-controls="bubble-panel"
+        aria-selected="true"
+      >
+        BubbleMenu
+      </button>
+      <button
+        role="tab"
+        id="floating-tab"
+        aria-controls="floating-panel"
+        aria-selected="false"
+      >
+        FloatingMenu
+      </button>
+    </div>
+
+    <section id="bubble-panel" role="tabpanel" aria-labelledby="bubble-tab">
+      <p>
+        A bubble menu for editing a link's text. It opens when the selection is
+        in the link.
+      </p>
+      <fieldset>
+        <legend>Deferred work to test</legend>
+        <label>
+          <input type="radio" name="bubble-mode" value="focus" checked />
+          <b>Focus timer:</b> when the editor gains focus,
+          <code>focusHandler</code> defers <code>update()</code> with
+          <code>setTimeout</code>.
+        </label>
+        <label>
+          <input type="radio" name="bubble-mode" value="update" />
+          <b>Update debounce:</b> a selection change is acted on after
+          <code>updateDelay</code>, 250ms by default.
+        </label>
+      </fieldset>
+
+      <h2>Steps</h2>
+      <ol data-mode="focus">
+        <li>
+          Click <b>Reset</b>. This puts the caret inside the link without
+          focusing the editor, so focus stays on the button.
+        </li>
+        <li>Press <kbd>Tab</kbd> to move focus into the editor.</li>
+      </ol>
+      <ol data-mode="update" hidden>
+        <li>
+          Click <b>Reset</b>. This puts the caret at the start of the editor and
+          focuses it.
+        </li>
+        <li>Double-click the word <i>docs</i> in the link.</li>
+      </ol>
+      <p>
+        <b>Expected:</b> the menu opens with the link text selected in its
+        input, ready to type over.<br />
+        <b>Actual:</b> the menu opens, but focus ends up on
+        <code>&lt;body&gt;</code>. Typing goes nowhere.
+      </p>
+      <p>
+        <label>
+          <input type="checkbox" id="bubble-trigger" checked />
+          <b>Trigger the bug:</b>
+          <span data-mode="focus">
+            register a plugin when the editor gains focus, and remove it on
+            blur, as Tiptap's table column resizing does.
+          </span>
+          <span data-mode="update" hidden>
+            register a plugin when text is selected, and remove it when the
+            selection collapses, as a component that mounts for a selection and
+            registers its own menu would.
+          </span>
+        </label>
+      </p>
+      <p>Clear it and repeat the steps, and the input keeps focus.</p>
+
+      <button id="bubble-reset">Reset</button>
+      <div id="bubble-editor" class="editor"></div>
+      <div id="bubble-status" class="status"></div>
+    </section>
+
+    <section
+      id="floating-panel"
+      role="tabpanel"
+      aria-labelledby="floating-tab"
+      hidden
+    >
+      <p>
+        A floating menu with a prompt for the empty line. It opens when the
+        caret is on that line. <code>FloatingMenuView</code> has no update
+        debounce, so only its focus timer applies.
+      </p>
+
+      <h2>Steps</h2>
+      <ol>
+        <li>
+          Click <b>Reset</b>. This puts the caret on the empty line without
+          focusing the editor, so focus stays on the button.
+        </li>
+        <li>Press <kbd>Tab</kbd> to move focus into the editor.</li>
+      </ol>
+      <p>
+        <b>Expected:</b> the menu opens with focus in its input, ready to
+        type.<br />
+        <b>Actual:</b> the menu opens, but focus ends up on
+        <code>&lt;body&gt;</code>. Typing goes nowhere.
+      </p>
+      <p>
+        <label>
+          <input type="checkbox" id="floating-trigger" checked />
+          <b>Trigger the bug:</b> register a plugin when the editor gains focus,
+          and remove it on blur, as Tiptap's table column resizing does.
+        </label>
+      </p>
+      <p>Clear it and repeat the steps, and the input keeps focus.</p>
+
+      <button id="floating-reset">Reset</button>
+      <div id="floating-editor" class="editor"></div>
+      <div id="floating-status" class="status"></div>
+    </section>
 
     <script type="module" src="/src/main.js"></script>
   </body>
